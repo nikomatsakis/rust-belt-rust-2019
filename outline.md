@@ -160,7 +160,7 @@ The reference created by the loan -- or some reference derived from it
 
 # So how do we decide if a loan is **live**?
 
-* How today's borrow checker does it:
+* How the borrow checker does it **today**:
     * we compute a **lifetime** for each reference: 
         * that part of the program where the reference may be used.
     * each loan creates a reference
@@ -168,9 +168,24 @@ The reference created by the loan -- or some reference derived from it
 
 ---
 
+```rust
+/*0*/ let mut x: u32 = 22;
+/*1*/ let y: &'1 u32 = &'0 u32;
+/*2*/ x += 1;
+/*3*/ print(y);
+```
+
+* Two lifetimes:
+    * `'0` -- the lifetime of the reference created by `&u32`
+    * `'1` -- the lifetime of the variable `y`
+* Both are computed to be `{1, 2, 3}`
+* The loan is live in the span `'0`, or on lines L1, L2, and L3
+
+---
+
 # So how do we decide if a loan is **live**?
 
-* How Polonius does it:
+* How **Polonius** does it:
     * we compute an **origin** for each reference *R*:
         * a set of loans indicating the loans *R* might have come from
     * at any given point in the program, look at the **references** which might be used
@@ -180,71 +195,116 @@ The reference created by the loan -- or some reference derived from it
 
 ```rust
 let mut x: u32 = 22;
-```
-
-```rust
-// the `&x` "acquires" a read lock on `x`
-let y: &u32 = &x;
-```
-
-```rust
-...
-print(y);
-// "read lock" released after last use of `y`
-```
-
----
-
-let's go a bit deeper
-
-```rust
-let mut x: u32 = 22;
-let y: &'0 u32 = &'1 x;
+let y: &'1 u32 = /*L0*/ &'0 u32;
 x += 1;
 print(y);
 ```
 
-* created lifetime *inference variables* named `'0` and `'1`
-* each of these maps to some portion of the program
-* so if `y: &'0 u32`, then `'0` represents "those parts of the program where `y` might be used"
+* Two origins:
+    * `'0` -- the origin of the reference created by `&u32`
+    * `'1` -- the origin of the variable `y`
+* Both are computed to be `{L0}`
+* At `x += 1`: 
+    * the variable `y` is live, 
+    * the type of `y` is `&{L0} u32`,
+    * therefore the loan `L0` is live
 
 ---
 
-"those parts of the program?"
+# In summary:
 
-```graphviz
-digraph {
-  compound=true
-  rankdir=TD
-  node [ 
-      shape=box, 
-      width=1.5,
-      fontname="Source Sans Pro",   
-      fontsize=14,
-  ]
-  node0 [ label="let mut x = 22;" ]
-  subgraph cluster1 {
-      shape=box
-      label="'0, '1"
-      labeljust="left"
-      node1 [ label="let y = &x;"]
-      node2 [ label="x += 1;" ]
-      node3 [ label="print(y);" ]
-  }
-  node0 -> node1
-  node1 -> node2
-  node2 -> node3
+* Terms:
+    * loan: a `&x` or `&mut x` expression, implicit or explicit
+    * path: something like `x`, `x.y`, `*z[3].f`
+    * origin: a set of loans, written as `'foo` in Rust syntax
+* Two perspectives:
+    * today: "how long do you use this reference"
+    * polonius: "which loans could this reference have come from"
+
+---
+
+# More interesting case
+
+```rust
+let mut map = HashMap::new();
+match map.get("key") {
+    Some(v) => {
+        print(v);
+    }
+    
+    None => {
+        map.insert("key", "value");
+    }
 }
 ```
 
 ---
 
+
+
+---
+
+# Named lifetimes
+
 ```rust
-/*a*/ let mut x: u32 = 22;
-/*b*/ let y: &'{b,c,d} u32 = &'{b,c,d} x;
-/*c*/ x += 1;   // Error, but why?
-/*d*/ print(y);
+fn get_or_insert<'a, K, V>(
+    map: &'a mut HashMap<K, V>,
+    key: K,
+) -> &'a mut V
+where
+    V: Default
+{
+    ... /* "problem case #3" */
+}
 ```
 
-Idea:
-* 
+---
+
+# 
+
+```rust
+fn get_or_insert<'a, K, V>(...) -> &'a mut V {
+    match map.get(
+}
+```
+
+
+---
+
+# Up is down and left is right
+
+    * a set of statements, so to speak
+* Polonius: "what might this reference point to"
+    * a set of loans
+* Consider `'static`:
+    * Today: this reference is used from everywhere
+        * the universal set containing *all* statements
+    * Polonius: this reference came from static memory
+        * the empty set
+
+---
+
+# 
+
+
+XXX
+
+so what have we introduced so far:
+
+* Path
+* Origin
+* Loan
+
+other atoms don't seem so important, so we've got the key cases:
+
+* Node // control-flow graph?
+* Variable // kind of a technicality
+
+other points to raise:
+
+* "problem case #3" and placeholder lifetimes
+* why this should help us in solving interior references
+* a closer look at the rules -- this probably means we need to decide which variant of the rules we are using
+    * probably a good idea to start with the "subset rules" as originally expressed
+    * maybe just kind of "glide" over that distinction
+* killing seems rather more interesting 
