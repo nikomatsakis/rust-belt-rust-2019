@@ -223,7 +223,7 @@ print(y);
 
 ---
 
-# More interesting case
+# Problem case #2
 
 ```rust
 let mut map = HashMap::new();
@@ -240,7 +240,70 @@ match map.get("key") {
 
 ---
 
+# Problem case #2, desugared
 
+```rust
+let mut map = HashMap::new();
+let tmp = map.get("key");
+if tmp.is_some() {
+    print(tmp.unwrap());
+} else {
+    map.insert("key", "value");
+}
+```
+
+---
+
+# Problem case #2, desugared further
+
+```rust
+let mut map = HashMap::new();
+let tmp: &'1 V = HashMap::get(&'0 map, "key");
+if tmp.is_some() {
+    print(tmp.unwrap());
+} else {
+    HashMap::insert(&'2 mut map, "key", "value");
+}
+```
+
+---
+
+# PC#2, NLL
+
+```rust
+/*0*/ let mut map = HashMap::new();
+/*1*/ let tmp: &'1 V = HashMap::get(&'0 map, "key");
+/*2*/ if tmp.is_some() {
+    /*3*/ print(tmp.unwrap());
+} else {
+    /*4*/ HashMap::insert(&'2 mut map, "key", "value");
+}
+```
+
+We compute:
+
+* `'0` contains lines 1, 2, and 3
+* `'1` the same
+* `'2` contains line 4
+
+---
+
+# PC#2, Polonius
+
+```rust
+let mut map = HashMap::new();
+let tmp: &'1 V = HashMap::get(&'0 map, "key"); // L_get
+if tmp.is_some() {
+    print(tmp.unwrap());
+} else {
+    HashMap::insert(&'2 mut map, "key", "value"); // L_insert
+}
+```
+
+We compute:
+
+* `'0` and `'1` are `{L_get}`
+* `'2` is `{L_insert}`
 
 ---
 
