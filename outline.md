@@ -74,7 +74,7 @@ error[E0506]: cannot assign to `x` because it is borrowed
    |           - borrow later used here
 ```
 
-[TkTTK]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=d7c424c90621f7eb5cf39667a4bc4fd4)
+[TkTTK]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=d7c424c90621f7eb5cf39667a4bc4fd4
 
 I like to think of this as a read-write lock per memory location.  The
 shared borrow `&x` acquires a **read lock**. The read lock persists as
@@ -261,6 +261,8 @@ print(y);
 ```
 
 * Role of liveness:
+    * when a variable is live, all loans in its type are live
+* In this case:
     * `y` is live on lines 2 and 3
     * the type of `y` is `&'1 u32`, and `'1` is `{L0}`
     * everywhere `y` is live, `L0` is live, and `L0` 
@@ -357,36 +359,46 @@ if tmp.is_some() {
 }
 ```
 
-We compute:
+We compute the following origins for each reference:
 
 * `'0` and `'1` are `{L_get}`
 * `'2` is `{L_insert}`
+
+But `tmp` is not live in the else branch, so `L_get` is not live there either
 
 ---
 
 # Named lifetimes
 
 ```rust
-fn get_or_insert<'a, K, V>(
-    map: &'a mut HashMap<K, V>,
-    key: K,
-) -> &'a mut V
-where
-    V: Default
-{
+fn get_or_insert<'a>(
+    map: &'a mut HashMap<&'static str, &'static str>,
+) -> &'a mut V {
     ... /* "problem case #3" */
 }
 ```
 
 ---
 
-# 
-
 ```rust
-fn get_or_insert<'a, K, V>(...) -> &'a mut V {
-    match map.get(
+fn get_or_insert<'a>(
+    map: &'a mut HashMap<&'static str, &'static str>,
+) -> &'a mut V {
+    let tmp: &'1 V = HashMap::get(&'0 *map, "key");
+    if tmp.is_some() {
+        return tmp.unwrap();
+    } else {
+        HashMap::insert(&'2 mut *map, "key", "value");
+    }
 }
 ```
+
+---
+
+# Named lifetimes
+
+* What *is* a named lifetime?
+* In NLL, 
 
 
 ---
