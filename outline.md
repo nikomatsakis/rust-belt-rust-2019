@@ -170,7 +170,7 @@ The reference created by the loan -- or some reference derived from it
 
 ```rust
 /*0*/ let mut x: u32 = 22;
-/*1*/ let y: &'1 u32 = &'0 u32;
+/*1*/ let y: &'1 u32 = &'0 x;
 /*2*/ x += 1;
 /*3*/ print(y);
 ```
@@ -178,8 +178,30 @@ The reference created by the loan -- or some reference derived from it
 * Two lifetimes:
     * `'0` -- the lifetime of the reference created by `&u32`
     * `'1` -- the lifetime of the variable `y`
-* Both are computed to be `{1, 2, 3}`
-* The loan is live in the span `'0`, or on lines L1, L2, and L3
+* Both are computed to be `{2, 3}`
+* The loan is live in the span `'0`, or on lines 2 and 3
+
+---
+
+# NLL Computation in more detail
+
+```rust
+/*0*/ let mut x: u32 = 22;
+/*1*/ let y: &'1 u32 = &'0 x;
+/*2*/ x += 1;
+/*3*/ print(y);
+```
+
+* Two key components:
+    * **live variables:** at each point in the program
+    * **data flow:** relationships between regions
+* In our example:
+    * Line 1 requires `'0: '1`, because `&'0 x <: &'1 u32`
+        * in NLL, we say `'0` **outlives** `'1`
+    * The variable `y` is live on lines 2 and 3
+        * Hence `'1` must include at least 2 and 3
+* Put these together:
+    * `'0 = '1 = {line 2, line 3}`
 
 ---
 
@@ -195,7 +217,7 @@ The reference created by the loan -- or some reference derived from it
 
 ```rust
 let mut x: u32 = 22;
-let y: &'1 u32 = /*L0*/ &'0 u32;
+let y: &'1 u32 = /*L0*/ &'0 x;
 x += 1;
 print(y);
 ```
@@ -208,6 +230,41 @@ print(y);
     * the variable `y` is live, 
     * the type of `y` is `&{L0} u32`,
     * therefore the loan `L0` is live
+
+---
+
+# Polonius computation in more detail
+
+```rust
+/*0*/ let mut x: u32 = 22;
+/*1*/ let y: &'1 u32 = &'0 x;
+/*2*/ x += 1;
+/*3*/ print(y);
+```
+
+* **Same** key components:
+    * **live variables:** at each point in the program
+    * **data flow:** relationships between regions
+* But, to compute the origins, **only need data flow**:
+    * `'0: '1` in Polonius means `'0` &sube; `'1`
+        * `'1` might point anywhere that `'0` might point
+
+---
+
+# Polonius computation in more detail
+
+```rust
+/*0*/ let mut x: u32 = 22;
+/*1*/ let y: &'1 u32 = &'0 x;
+/*2*/ x += 1;
+/*3*/ print(y);
+```
+
+* Role of liveness:
+    * `y` is live on lines 2 and 3
+    * the type of `y` is `&'1 u32`, and `'1` is `{L0}`
+    * everywhere `y` is live, `L0` is live, and `L0` 
+        * therefore, `x` cannot be mutated if `y` is live
 
 ---
 
