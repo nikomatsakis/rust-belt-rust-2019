@@ -271,20 +271,11 @@ mark, .mark {
     width: 50px;
 }
 
-.line3r img {
+.line3-after img {
     position: absolute;
-    top: 183px;
-    left: 50%;
+    top: 195px;
+    left: 10px;
     width: 50px;
-    transform: translateX(-100%);
-}
-
-.line3-regalo img {
-    position: absolute;
-    top: 220px;
-    left: 220px;
-    width: 50px;
-    transform: rotate(270deg);
 }
 
 .line4 img {
@@ -294,9 +285,9 @@ mark, .mark {
     width: 50px;
 }
 
-.line5 img {
+.line4-after img {
     position: absolute;
-    top: 245px;
+    top: 238px;
     left: 10px;
     width: 50px;
 }
@@ -329,9 +320,9 @@ mark, .mark {
     width: 50px;
 }
 
-.line9 img {
+.line9-after img {
     position: absolute;
-    top: 365px;
+    top: 350px;
     left: 10px;
     width: 50px;
 }

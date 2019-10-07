@@ -9,11 +9,7 @@ count: false
 
 ---
 
-# The most common question
-
---
-
-**Where did you get that name?**
+# Where did you get that name?
 
 ---
 
@@ -26,24 +22,25 @@ count: false
 > Neither a borrower nor a lender be;
 > For loan oft loses both itself and friend. <br/>
 > <br/>
-> -- Polonius, Hamlet
+> -- Polonius to his son Laertes, Hamlet
 
 --
 
 **Little known fact:** Polonius was an experienced C hacker. This made
 him a bit cautious.
 
-**Good news:** He has since adopted Rust. 
+**Good news:** He has since adopted Rust! 🎉
 
 --
 
-> Borrow, lend, whatever. The compiler's got your back. <br/> 
+> Borrow, lend, whatever. The compiler's got your back. <br/>
+> Go out and build your dreams! <br/>
 > <br/>
 > -- Polonius, today
 
 ---
 
-# How Rust borrow checker works today
+# Rust borrow checker
 
 --
 
@@ -106,8 +103,8 @@ template: how-rust-borrow-checker-works-today
 # Let's try to make that more precise
 
 * Error at some program statement *N* if:
-    * *N* accesses a path *P*
-    
+    * the statement *N* accesses a path *P*
+
 ---
 
 # Definition: Path
@@ -124,11 +121,55 @@ Examples:
 
 ---
 
+# Not paths
+
+* `foo()` -- result of a function call
+* `22` -- creates and returns an integer
+* `&x` -- creates and returns a reference (to `x`)
+
+--
+
+"Could I assign to it?"
+
+```rust
+foo() = 22; // doesn't make sense, not a path
+x[3].f = 22; // makes sense, `x[3].f` is a path
+```
+
+---
+
+# You can only borrow a path
+
+```rust
+let y = &x; // borrows the path "x"
+```
+
+--
+
+*"But what", you say, "can't I do this?"*
+
+```rust
+let y = &22;
+```
+
+--
+
+*"Yes", I answer, "but it's desugared to this"*
+
+```rust
+let tmp = 22; // a "temporary"
+let y = &tmp;
+```
+
+\* *Generally, temporaries are freed at end of enclosing statement.*
+
+---
+
 # Back to our error
 
 * Error at some program statement *N* if:
-    * *N* accesses a path *P*
-    * Accessing *P* would violate the terms of some loan *L*
+    * the statement *N* accesses a path *P*
+    * Accessing the path *P* would violate the terms of some loan *L*
 
 ---
 
@@ -136,10 +177,16 @@ Examples:
 
 A **loan** is a name for a borrow expression like `&x`.
 
+```rust
+let y = &x;
+```
+
 Loans have associated with them:
 
 * a **path** that was borrowed (here, `x`)
-* a **mode** with which it was borrowed (either *shared* or *borrowed*)
+* a **mode** with which it was borrowed (either *shared* or *mutable*)
+
+--
 
 ---
 
@@ -198,8 +245,8 @@ print(y);
 # Back to our error, again
 
 * Error at some program statement *N* if:
-    * *N* accesses a path *P*
-    * Accessing *P* would violate the terms of some loan *L*
+    * the statement *N* accesses a path *P*
+    * Accessing the path *P* would violate the terms of some loan *L*
     * the loan *L* is live
 
 ---
@@ -210,6 +257,73 @@ Something that might be used later
 
 ---
 
+name: live-variables
+
+# Definition: Live variables
+
+```rust
+let mut x = 1;
+
+x = 2;
+
+if something {
+    x = 4;
+}
+
+print(x);
+```
+
+---
+
+template: live-variables
+
+.line2[![Point at `let mut x = 1`](content/images/Arrow.png)]
+
+Is `x` live here? (Just after `x = 1`)
+
+--
+
+No -- it will be reassigned before it is used.
+
+---
+
+template: live-variables
+
+.line3-after[![Point at `let mut x = 1`](content/images/Arrow.png)]
+
+Is `x` live here? (Just after `x = 2`)
+
+--
+
+Yes -- current value *might* get used (but might not).
+
+---
+
+template: live-variables
+
+.line4-after[![Point at `let mut x = 1`](content/images/Arrow.png)]
+
+Is `x` live here? (Just *before* the `x=4` statement)
+
+--
+
+No -- current value *won't* get used.
+
+---
+
+template: live-variables
+
+.line9-after[![Point at `let mut x = 1`](content/images/Arrow.png)]
+
+Is `x` live here? (Just *after* the `print` statement)
+
+--
+
+No -- no more uses at all.
+
+
+---
+
 # Definition: Live loan
 
 The reference created by the loan -- or some reference derived from it
@@ -217,7 +331,15 @@ The reference created by the loan -- or some reference derived from it
 
 --
 
-(Actually, we'll refine this later, but it's good enough for now.)
+```rust
+let y = &foo;      // Loan L1
+let z = &y.foo;    // Loan L2
+
+// z will get used, so
+// loans L1 and L2 are both live
+
+print(z);
+```
 
 ---
 
