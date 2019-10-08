@@ -248,12 +248,12 @@ mark, .mark {
     width: 50px;
 }
 
-.line2r img {
+.line2-lifetime img {
     position: absolute;
-    top: 152px;
-    left: 50%;
+    top: 90px;
+    left: 320px;
     width: 50px;
-    transform: translateX(-100%);
+    transform: rotate(270deg);
 }
 
 .line2-data img {

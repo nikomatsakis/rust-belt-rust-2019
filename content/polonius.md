@@ -358,8 +358,30 @@ name: how-do-we-decide-today
 
 ## How the borrow checker does it **today**
 
-* we compute a **lifetime** for each reference: 
+* we compute a **lifetime** for each reference:
     * that part of the program where the reference may be used.
+
+---
+
+# What is a lifetime
+
+```rust
+let mut x: u32 = 22;
+let y: &u32 = &x;
+x += 1;
+print(y);
+```
+
+---
+
+# What is a lifetime
+
+```rust
+let mut x: u32 = 22;
+let y: &'0 u32 = &'1 x;
+x += 1;
+print(y);
+```
 
 ---
 
@@ -369,7 +391,7 @@ name: what-is-a-lifetime
 
 ```rust
 /*0*/ let mut x: u32 = 22;
-/*1*/ let y: &u32 = &x;
+/*1*/ let y: &'0 u32 = &'1 x;
 /*2*/ x += 1;
 /*3*/ print(y);
 ```
@@ -378,17 +400,34 @@ name: what-is-a-lifetime
 
 template: what-is-a-lifetime
 
-* What is lifetime of the reference `y`?
-    * Lines 2 and 3 -- it's not used after that
+**What is `'0`, the lifetime of the reference `y`?**
+
+* **Answer:** Lines 2 and 3
+* On line 1, it is assigned
+* Lines 2 and 3, variable `y` is live
 
 ---
 
 template: what-is-a-lifetime
 
-* What about reference returned by `&x`?
-    * Lines 1, 2, and 3
-    * On line 1, it is created and then stored into `y`
-    * And then `y` is live on lines 2 and 3
+**What about `'1`, lifetime of the reference returned by `&x`?**
+
+* **Answer:** Also lines 2 and 3
+* It is stored into `y`
+    * `&'1 u32` must be a subtype of `&'0 u32` (`&'1 u32 <: &'0 u32`)
+    * So `'1` must "outlive" `'0` (`'1: '0`)
+    * Any line where `'0` is live, `'1` must also be live
+
+---
+
+template: what-is-a-lifetime
+
+```rust
+/*0*/ let mut x: u32 = 22;
+/*1*/ let y: &{2, 3} u32 = &{2, 3} x;
+/*2*/ x += 1;
+/*3*/ print(y);
+```
 
 ---
 
@@ -405,10 +444,14 @@ template: how-do-we-decide-today
 
 ```rust
 /*0*/ let mut x: u32 = 22;
-/*1*/ let y: &{2, 3} u32 = &{1, 2, 3} x;
+/*1*/ let y: &{2, 3} u32 = &{2, 3} x;
 /*2*/ x += 1;
 /*3*/ print(y);
 ```
+
+.line2-lifetime[![Point at `&x`](content/images/Arrow.png)]
+
+--
 
 * Line 2 modifies the path `x`
 
@@ -416,7 +459,7 @@ template: how-do-we-decide-today
 * Modifying the path `x` violates the terms of `&x` loan from line 1
 
 --
-* Loan from line 1 is live on lines 1, 2, and 3
+* Loan from line 1 is live on lines 2, and 3
 
 --
 * **Ergo:** Error!
@@ -429,11 +472,96 @@ template: how-do-we-decide-today
 
 ---
 
+name: how-polonius-decides
+
 # So how do we decide if a loan is **live**?
 
 ## How Polonus does it
 
 * we compute an **origin** for each reference *R*:
     * a set of loans indicating the loans *R* might have come from
-    
-    
+
+---
+
+name: what-is-an-origin
+
+# What is an origin
+
+```rust
+let mut x: u32 = 22;
+let y: &'0 u32 = &'1 x /* Loan L1 */;
+x += 1;
+print(y);
+```
+
+---
+
+template: what-is-an-origin
+
+**What is the origin `'1`?**
+
+The set `{L1}`.
+
+---
+
+template: what-is-an-origin
+
+**What about the origin `'0`?**
+
+Also the set `{L1}`.
+
+--
+
+From the subtyping relationship:
+
+* `&'1 u32` stored into `&'0 u32`
+* So `'1` &sube; `'0`
+    * "`'0` could have originated from anywhere `'1` originated from"
+
+---
+
+# What is an origin
+
+```rust
+let mut x: u32 = 22;
+let y: &{L1} u32 = &{L1} x /* Loan L1 */;
+x += 1;
+print(y);
+```
+
+---
+
+template: how-polonius-decides
+
+---
+
+template: how-polonius-decides
+
+* a loan *L* is live if **some live variable** has *L* in its type
+
+---
+
+```rust
+/*0*/ let mut x: u32 = 22;
+/*1*/ let y: &{L1} u32 = &{L1} x /* Loan L1 */;
+/*2*/ x += 1;
+/*3*/ print(y);
+```
+
+--
+
+.line2-lifetime[![Point at `&x`](content/images/Arrow.png)]
+
+--
+
+* Line 2 modifies the path `x`
+
+--
+* Modifying the path `x` violates the terms of the loan `L1`
+
+--
+* `y` is live on line 2 and its type includes the loan `L1`
+
+--
+
+**Ergo:** Error!
