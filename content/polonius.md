@@ -374,14 +374,18 @@ print(y);
 
 ---
 
+name: what-is-a-lifetime
+
 # What is a lifetime
 
 ```rust
-let mut x: u32 = 22;
-let y: &'0 u32 = &'1 x;
-x += 1;
-print(y);
+/*0*/ let mut x: u32 = 22;
+/*1*/ let y: &u32 = &x;
+/*2*/ x += 1;
+/*3*/ print(y);
 ```
+
+lifetime = set of line numbers from the current function
 
 ---
 
@@ -396,7 +400,14 @@ name: what-is-a-lifetime
 /*3*/ print(y);
 ```
 
---
+---
+
+template: what-is-a-lifetime
+
+* `'0` and `'1` are "inference variables"
+* compiler has to figure out their value (some set of lines)
+
+---
 
 template: what-is-a-lifetime
 
@@ -413,14 +424,12 @@ template: what-is-a-lifetime
 **What about `'1`, lifetime of the reference returned by `&x`?**
 
 * **Answer:** Also lines 2 and 3
-* It is stored into `y`
-    * `&'1 u32` must be a subtype of `&'0 u32` (`&'1 u32 <: &'0 u32`)
-    * So `'1` must "outlive" `'0` (`'1: '0`)
-    * Any line where `'0` is live, `'1` must also be live
+* Value is not directly live
+* It is stored into `y`, and hence `'1` must outlive `'0`
 
 ---
 
-template: what-is-a-lifetime
+# What is a lifetime (final result)
 
 ```rust
 /*0*/ let mut x: u32 = 22;
@@ -550,10 +559,6 @@ template: how-polonius-decides
 
 --
 
-.line2-lifetime[![Point at `&x`](content/images/Arrow.png)]
-
---
-
 * Line 2 modifies the path `x`
 
 --
@@ -561,6 +566,7 @@ template: how-polonius-decides
 
 --
 * `y` is live on line 2 and its type includes the loan `L1`
+    * type of `y` is `&{L1} u32`
 
 --
 
@@ -817,6 +823,8 @@ template: pc2-with-polonius
 --
 
 .center[.HugeEmoji[⚠️]]
+
+.center["Total speculation ahead"]
 
 ---
 
