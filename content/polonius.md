@@ -460,6 +460,12 @@ template: how-do-we-decide-today
 
 .line2-lifetime[![Point at `&x`](content/images/Arrow.png)]
 
+* Error at some program statement *N* if:
+    * the statement *N* accesses a path *P*
+    * Accessing the path *P* would violate the terms of some loan *L*
+    * the loan *L* is live
+
+
 --
 
 * Line 2 modifies the path `x`
@@ -551,6 +557,12 @@ template: how-polonius-decides
 /*2*/ x += 1;
 /*3*/ print(y);
 ```
+
+* Error at some program statement *N* if:
+    * the statement *N* accesses a path *P*
+    * Accessing the path *P* would violate the terms of some loan *L*
+    * the loan *L* is live
+
 
 --
 
