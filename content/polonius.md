@@ -483,7 +483,7 @@ template: how-do-we-decide-today
 
 # So how do we decide if a loan is **live**?
 
-## How Polonus does it
+## How Polonius does it
 
 ---
 
@@ -491,7 +491,7 @@ name: how-polonius-decides
 
 # So how do we decide if a loan is **live**?
 
-## How Polonus does it
+## How Polonius does it
 
 * we compute an **origin** for each reference *R*:
     * a set of loans indicating the loans *R* might have come from
