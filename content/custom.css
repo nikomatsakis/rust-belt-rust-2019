@@ -292,6 +292,13 @@ mark, .mark {
     width: 50px;
 }
 
+.line5 img {
+    position: absolute;
+    top: 240px;
+    left: 10px;
+    width: 50px;
+}
+
 .line6 img {
     position: absolute;
     top: 275px;
@@ -377,6 +384,13 @@ mark, .mark {
   font-family: 'Yanone Kaffeesatz';
   font-weight: normal;
   font-size: 300px;
+}
+
+.HugeEmoji {
+  font-family: 'Yanone Kaffeesatz';
+  font-weight: normal;
+  font-size: 300px;
+  font-color: red;
 }
 
 .group { }

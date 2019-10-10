@@ -71,11 +71,11 @@ error[E0506]: cannot assign to `x` because it is borrowed
  --> src/main.rs:6:5
    |
  5 |     let y: &u32 = &x;
-   |                   -- borrow of `x` occurs here
+*  |                   -- borrow of `x` occurs here
  6 |     x += 1;
-   |     ^^^^^^ assignment to borrowed `x` occurs here
+*  |     ^^^^^^ assignment to borrowed `x` occurs here
  7 |     print(y);
-   |           - borrow later used here
+*  |           - borrow later used here
 ```
 
 [TkTTK]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=d7c424c90621f7eb5cf39667a4bc4fd4
@@ -565,3 +565,295 @@ template: how-polonius-decides
 --
 
 **Ergo:** Error!
+
+---
+
+name: where-polonius-can-help
+
+# Where Polonius can help
+
+```rust
+fn get_or_insert(
+    map: &mut HashMap<u32, String>,
+) -> &String {
+    match map.get(&22) {
+        Some(v) => v,
+        None => {
+            map.insert(22, String::from("hi"));
+            &map[&22]
+        }
+    }
+}
+```
+
+---
+
+template: where-polonius-can-help
+
+.line2[![Point at `map`](content/images/Arrow.png)]
+
+Given a map...
+
+---
+
+template: where-polonius-can-help
+
+.line3[![Point at `map`](content/images/Arrow.png)]
+
+Given a map... return a reference to a value in that map.
+
+---
+
+template: where-polonius-can-help
+
+.line4[![Point at `map`](content/images/Arrow.png)]
+
+Does the map have the key `22`?
+
+---
+
+template: where-polonius-can-help
+
+.line5[![Point at `map`](content/images/Arrow.png)]
+
+Does the map have the key `22`? If so, return it.
+
+---
+
+template: where-polonius-can-help
+
+.line6[![Point at `map`](content/images/Arrow.png)]
+
+Otherwise, insert a value and return that.
+
+---
+
+# What happens today?
+
+If you [try this on the playground][wht-pg], you get:
+
+```
+error[E0502]: cannot borrow `*map` as mutable because also borrowed as immutable
+ --> src/main.rs:11:13
+  |
+3 |   map: &mut HashMap<u32, String>,
+* |        - let's call the lifetime of this reference `'1`
+4 | ) -> &String {
+5 |   match map.get(&22) {
+* |         --- immutable borrow occurs here
+6 |     Some(v) => v,
+* |                - returning this value requires `*map` is borrowed for `'1`
+7 |     None => {
+8 |       map.insert(22, String::from("hi"));
+* |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ mutable borrow occurs here
+```
+
+[wht-pg]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2018&gist=487acc6ab7b1a9e3538d026a3af7d0bc
+
+---
+
+name: lightly-desugared
+
+# Lightly desugared
+
+```rust
+fn get_or_insert<'a>(
+    map: &'a mut HashMap<u32, String>,
+) -> &'a String {
+    match HashMap::get(&*map, &22) {
+        Some(v) => v,
+        None => {
+            map.insert(22, String::from("hi"));
+            &map[&22]
+        }
+    }
+}
+```
+
+---
+
+template: lightly-desugared
+
+.line1[![Point at `'a`](content/images/Arrow.png)]
+
+---
+
+template: lightly-desugared
+
+.line4[![Point at `map`](content/images/Arrow.png)]
+
+* Now we can see the loan, of the path `*map`
+* **Problem:** Lifetime of this loan cannot be expressed as a set of
+  line numbers. It is `'a`.
+
+---
+
+# Named lifetimes
+
+```rust
+        fn caller() {
+/* 1 */     let mut map = HashMap::new();
+/* 2 */     let v = get_or_insert(&mut map);
+/* 3 */     print(v);
+        }
+        
+        fn get_or_insert<'a>(
+            map: &'a mut HashMap<u32, String>,
+        ) -> &'a String {
+            ...
+        }
+```
+
+* `'a` really refers to some part of the caller
+    * in this case, maybe lines 2 and 3
+    * but that includes *all* of `get_or_insert`
+
+---
+
+name: named-lifetimes-nll
+
+# Incorporating named lifetimes in NLL 
+
+```rust
+fn get_or_insert<'a>(
+    map: &'a mut HashMap<u32, String>,
+) -> &'a String {
+    match HashMap::get(&*map, &22) {
+        Some(v) => v,
+        None => {
+            map.insert(22, String::from("hi"));
+            &map[&22]
+        }
+    }
+}
+```
+
+---
+
+template: named-lifetimes-nll
+
+* Lifetimes in NLL can then be **either**:
+    * a set of lines
+    * a named lifetime like `'a`, which includes all lines
+
+---
+
+template: named-lifetimes-nll
+
+* The loan here...
+
+.line4[![Point at `insert`](content/images/Arrow.png)]
+
+---
+
+template: named-lifetimes-nll
+
+* The loan here... has lifetime `'a`
+
+.line5[![Point at `insert`](content/images/Arrow.png)]
+
+---
+
+template: named-lifetimes-nll
+
+* The loan here... has lifetime `'a`
+* And so it is live when we call `map.insert`
+
+**Error.**
+
+.line7[![Point at `insert`](content/images/Arrow.png)]
+
+---
+
+name: pc2-with-polonius
+
+# With Polonius?
+
+```rust
+fn get_or_insert<'a>(
+    map: &'a mut HashMap<u32, String>,
+) -> &'a String {
+    match HashMap::get(&*map, &22) {
+        Some(v) => v,
+        None => {
+            map.insert(22, String::from("hi"));
+            &map[&22]
+        }
+    }
+}
+```
+
+---
+
+template: pc2-with-polonius
+
+* The loan here...
+
+.line4[![Point at `insert`](content/images/Arrow.png)]
+
+---
+
+template: pc2-with-polonius
+
+* The loan here...is part of the type of `v`
+
+.line5[![Point at `insert`](content/images/Arrow.png)]
+
+---
+
+template: pc2-with-polonius
+
+* The loan here...is part of the type of `v`
+* But `v` is not live here, so `map.insert` is legal
+
+**OK.**
+
+.line7[![Point at `insert`](content/images/Arrow.png)]
+
+---
+
+# Where else can Polonius help?
+
+--
+
+.center[.HugeEmoji[⚠️]]
+
+---
+
+# Where else can Polonius help?
+
+```rust
+struct Message {
+    buffer: Vec<String>,
+    slice: &'buffer [u8], // "borrowed from the field `buffer`"
+}
+```
+
+--
+
+* To create one of these, you need
+    * a buffer
+    * a `&[u8]` that was borrowed **from that buffer**
+    
+--
+
+
+* How can we determine where a `&[u8]` was borrowed from?
+    * Lifetimes are the wrong tool
+    * Origins are the correct tool
+
+---
+
+# What is the status of Polonius
+
+* The Polonius WG is exploring Polonius
+* Currently working to extend rules to cover the full borrow checker
+* Also exploring best way to express the rules to be both readable and efficient
+    * Using datalog today
+
+---
+
+# Thank you!
+
+.center[.HugeEmoji[😍]]
+
