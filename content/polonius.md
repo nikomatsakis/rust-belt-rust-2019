@@ -519,14 +519,6 @@ template: what-is-an-origin
 
 Also the set `{L1}`.
 
---
-
-From the subtyping relationship:
-
-* `&'1 u32` stored into `&'0 u32`
-* So `'1` &sube; `'0`
-    * "`'0` could have originated from anywhere `'1` originated from"
-
 ---
 
 # What is an origin
@@ -537,6 +529,9 @@ let y: &{L1} u32 = &{L1} x /* Loan L1 */;
 x += 1;
 print(y);
 ```
+
+* Computing these origins only considered dataflow
+* Liveness is not relevant
 
 ---
 
