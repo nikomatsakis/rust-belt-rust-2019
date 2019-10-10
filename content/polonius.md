@@ -849,10 +849,12 @@ struct Message {
 
 # What is the status of Polonius
 
-* The Polonius WG is exploring Polonius
+* The [Polonius WG] is exploring Polonius
 * Currently working to extend rules to cover the full borrow checker
 * Also exploring best way to express the rules to be both readable and efficient
     * Using datalog today
+
+[Polonius WG]: https://rust-lang.github.io/compiler-team/working-groups/polonius/
 
 ---
 
