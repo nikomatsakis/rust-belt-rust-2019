@@ -530,7 +530,7 @@ x += 1;
 print(y);
 ```
 
-* Computing these origins only considered dataflow
+* Computing these origins only considered the flow of values
 * Liveness is not relevant
 
 ---
