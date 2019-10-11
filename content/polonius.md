@@ -40,22 +40,27 @@ him a bit cautious.
 
 ---
 
-# Rust borrow checker
+# Polonius
 
---
-
-```rust
-let mut x: u32 = 22;
-let y: &u32 = &x;
-x += 1;
-print(y);
-```
+* Work in progress
+* Reimagining the Rust borrow checker
+    * Accept more programs
+    * Simpler definition
 
 ---
 
-name: how-rust-borrow-checker-works-today
+# This talk
 
-# How Rust borrow checker works today
+* Define the classic borrow checker error
+* Explain how borrow checker finds such an error today
+* Explain how **Polonius** would find it
+* Show how Polonius's approach can help with other cases
+
+---
+
+name: the-classic-borrow-checker-error
+
+# The classic borrow checker error
 
 ```rust
 let mut x: u32 = 22;
@@ -82,19 +87,19 @@ error[E0506]: cannot assign to `x` because it is borrowed
 
 ---
 
-template: how-rust-borrow-checker-works-today
+template: the-classic-borrow-checker-error
 
 .line2[![Point at `&x`](content/images/Arrow.png)]
 
 ---
 
-template: how-rust-borrow-checker-works-today
+template: the-classic-borrow-checker-error
 
 .line3[![Point at `x+1`](content/images/Arrow.png)]
 
 ---
 
-template: how-rust-borrow-checker-works-today
+template: the-classic-borrow-checker-error
 
 .line4[![Point at `print`](content/images/Arrow.png)]
 
@@ -483,7 +488,7 @@ template: how-do-we-decide-today
 
 # So how do we decide if a loan is **live**?
 
-## How Polonus does it
+## How Polonius does it
 
 ---
 
@@ -491,7 +496,7 @@ name: how-polonius-decides
 
 # So how do we decide if a loan is **live**?
 
-## How Polonus does it
+## How Polonius does it
 
 * we compute an **origin** for each reference *R*:
     * a set of loans indicating the loans *R* might have come from
@@ -831,7 +836,7 @@ template: pc2-with-polonius
 
 .center[.HugeEmoji[⚠️]]
 
-.center["Total speculation ahead"]
+.center[**"Total speculation ahead"**]
 
 ---
 
