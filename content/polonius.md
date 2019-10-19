@@ -134,50 +134,6 @@ Examples:
 
 ---
 
-# Not paths
-
-* `foo()` -- result of a function call
-* `22` -- creates and returns an integer
-* `&x` -- creates and returns a reference (to `x`)
-
---
-
-"Could I assign to it?"
-
-```rust
-foo() = 22; // doesn't make sense, not a path
-x[3].f = 22; // makes sense, `x[3].f` is a path
-```
-
----
-
-# You can only borrow a path
-
-```rust
-let y = &x; // borrows the path "x"
-```
-
---
-
-*"But what", you say, "can't I do this?"*
-
-```rust
-let y = &22;
-```
-
---
-
-*"Yes", I answer, "but it's desugared to this"*
-
-```rust
-static TMP: u32  = 22; // a "temporary"
-let y = &TMP;
-```
-
-\* *Sometimes we introduce local variable temporaries as well.*
-
----
-
 # Back to our error
 
 * Error at some program statement *N* if:
