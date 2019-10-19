@@ -129,9 +129,8 @@ Examples:
 
 * `x` -- a local variable is a memory location on the stack
 * `x.f` -- a field of another path is a memory location
-* `*x` -- pass through a pointer to some location in the heap
 * `*x.f` -- pass through a pointer found at field `f` from variable `x`
-* `x[_]` -- index into an array (we don't care about the indices)
+* `(*x.f)[_]` -- index into an array (we don't care about the indices)
 
 ---
 
