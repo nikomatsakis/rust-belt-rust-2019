@@ -882,6 +882,14 @@ struct Message {
 # What is the status of Polonius
 
 * The [Polonius WG] is exploring Polonius
+* Big shoutout to
+    * lqd -- lead! all-around awesome! :tada:
+    * albins -- did his Master's project extending Polonius
+    * MatthewJasper -- borrow checker guru
+    * Frank McSherry -- implemented datafrog, timley dataflow
+    * and those other key contributor(s) that I know I am forgotting
+        * (I'm sorry)
+            * (Really sorry)
 * Currently working to extend rules to cover the full borrow checker
 * Also exploring best way to express the rules to be both readable and efficient
     * Using datalog today
