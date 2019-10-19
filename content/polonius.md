@@ -110,6 +110,15 @@ template: the-classic-borrow-checker-error
 * Error at some program statement *N* if:
     * the statement *N* accesses a path *P*
 
+--
+
+```rust
+let mut x: u32 = 22;
+let y: &u32 = &x;
+*x += 1; // the statement N
+print(y);
+```
+
 ---
 
 # Definition: Path
@@ -162,11 +171,25 @@ let y = &22;
 *"Yes", I answer, "but it's desugared to this"*
 
 ```rust
-let tmp = 22; // a "temporary"
-let y = &tmp;
+static TMP: u32  = 22; // a "temporary"
+let y = &TMP;
 ```
 
-\* *Generally, temporaries are freed at end of enclosing statement.*
+\* *Sometimes we introduce local variable temporaries as well.*
+
+---
+
+# Back to our error
+
+* Error at some program statement *N* if:
+    * the statement *N* accesses a path *P*
+
+```rust
+let mut x: u32 = 22;
+let y: &u32 = &x;
+x += 1; // the statement N modifies the path `x`
+print(y);
+```
 
 ---
 
@@ -175,6 +198,13 @@ let y = &tmp;
 * Error at some program statement *N* if:
     * the statement *N* accesses a path *P*
     * Accessing the path *P* would violate the terms of some loan *L*
+
+```rust
+let mut x: u32 = 22;
+let y: &u32 = &x;
+x += 1; // the statement N modifies the path `x`
+print(y);
+```
 
 ---
 
@@ -190,8 +220,6 @@ Loans have associated with them:
 
 * a **path** that was borrowed (here, `x`)
 * a **mode** with which it was borrowed (either *shared* or *mutable*)
-
---
 
 ---
 
@@ -252,7 +280,29 @@ print(y);
 * Error at some program statement *N* if:
     * the statement *N* accesses a path *P*
     * Accessing the path *P* would violate the terms of some loan *L*
+
+```rust
+let mut x: u32 = 22;
+let y: &u32 = &x; // loan L shares `x`
+x += 1; // the statement N modifies the path `x`, violating L
+print(y);
+```
+
+---
+
+# Back to our error, again
+
+* Error at some program statement *N* if:
+    * the statement *N* accesses a path *P*
+    * Accessing the path *P* would violate the terms of some loan *L*
     * the loan *L* is live
+
+```rust
+let mut x: u32 = 22;
+let y: &u32 = &x; // loan L shares `x`
+x += 1; // the statement N modifies the path `x`, violating L
+print(y);
+```
 
 ---
 
@@ -338,7 +388,7 @@ The reference created by the loan -- or some reference derived from it
 
 ```rust
 let y = &foo;      // Loan L1
-let z = &y.foo;    // Loan L2
+let z = &y.bar;    // Loan L2
 
 // z will get used, so
 // loans L1 and L2 are both live
@@ -354,6 +404,13 @@ print(z);
     * *N* accesses a path *P*
     * Accessing *P* would violate the terms of some loan *L*
     * the loan *L* is live
+
+```rust
+let mut x: u32 = 22;
+let y: &u32 = &x; // loan L shares `x`
+x += 1; // the statement N accesses the path `x`, violating L
+print(y); // L is live because it might used here
+```
 
 ---
 
@@ -378,8 +435,6 @@ print(y);
 ```
 
 ---
-
-name: what-is-a-lifetime
 
 # What is a lifetime
 
@@ -418,9 +473,13 @@ template: what-is-a-lifetime
 
 **What is `'0`, the lifetime of the reference `y`?**
 
-* **Answer:** Lines 2 and 3
-* On line 1, it is assigned
-* Lines 2 and 3, variable `y` is live
+* Liveness rule: `'0` must include all lines where `y` is live
+
+--
+* `y` is live on lines 2 and 3
+
+--
+* **Result:** `'0` is the set `{2, 3}`
 
 ---
 
@@ -428,9 +487,10 @@ template: what-is-a-lifetime
 
 **What about `'1`, lifetime of the reference returned by `&x`?**
 
-* **Answer:** Also lines 2 and 3
-* Value is not directly live
-* It is stored into `y`, and hence `'1` must outlive `'0`
+* Subtyping rule: `'1` flows into `'0`, so `'1` must outlive `'0`
+
+--
+* **Result:** `'1` is also the set `{2, 3}`
 
 ---
 
@@ -505,7 +565,7 @@ name: how-polonius-decides
 
 name: what-is-an-origin
 
-# What is an origin
+# Inferring origins
 
 ```rust
 let mut x: u32 = 22;
@@ -532,7 +592,7 @@ Also the set `{L1}`.
 
 ---
 
-# What is an origin
+# Inferring origins
 
 ```rust
 let mut x: u32 = 22;
