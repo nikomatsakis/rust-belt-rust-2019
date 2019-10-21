@@ -887,7 +887,7 @@ struct Message {
     * albins -- did his Master's project extending Polonius
     * MatthewJasper -- borrow checker guru
     * Frank McSherry -- implemented datafrog, timley dataflow
-    * and those other key contributor(s) that I know I am forgotting
+    * and those other key contributor(s) that I know I am forgetting
         * (I'm sorry)
             * (Really sorry)
 * Currently working to extend rules to cover the full borrow checker
