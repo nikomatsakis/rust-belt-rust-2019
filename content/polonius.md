@@ -886,7 +886,7 @@ struct Message {
     * lqd -- lead! all-around awesome! :tada:
     * albins -- did his Master's project extending Polonius
     * MatthewJasper -- borrow checker guru
-    * Frank McSherry -- implemented datafrog, timley dataflow
+    * Frank McSherry -- implemented datafrog, timely dataflow
     * and those other key contributor(s) that I know I am forgetting
         * (I'm sorry)
             * (Really sorry)
