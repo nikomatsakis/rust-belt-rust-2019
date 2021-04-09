@@ -881,11 +881,11 @@ struct Message {
 
 # What is the status of Polonius
 
-* The [Polonius WG] is exploring Polonius
+* The [Polonius WG] is exploring Polonius (slowly)
 * Big shoutout to
-    * lqd -- lead! all-around awesome! :tada:
-    * albins -- did his Master's project extending Polonius
-    * MatthewJasper -- borrow checker guru
+    * Rémy Rakic -- lead! all-around awesome! :tada:
+    * Amanda Stjerna -- did her Master's project extending Polonius
+    * Matthew Jasper -- borrow checker guru
     * Frank McSherry -- implemented datafrog, timely dataflow
     * and those other key contributor(s) that I know I am forgetting
         * (I'm sorry)
