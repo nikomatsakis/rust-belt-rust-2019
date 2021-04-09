@@ -108,7 +108,7 @@ template: the-classic-borrow-checker-error
 # Let's try to make that more precise
 
 * Error at some program statement *N* if:
-    * the statement *N* accesses a path *P*
+    * the statement *N* accesses a place *P*
 
 --
 
@@ -121,14 +121,14 @@ print(y);
 
 ---
 
-# Definition: Path
+# Definition: Place
 
-A **path** *P* is an expression that leads to a memory location.
+A **place** *P* is an expression that leads to a memory location.
 
 Examples:
 
 * `x` -- a local variable is a memory location on the stack
-* `x.f` -- a field of another path is a memory location
+* `x.f` -- a field of another place is a memory location
 * `*x.f` -- pass through a pointer found at field `f` from variable `x`
 * `(*x.f)[_]` -- index into an array (we don't care about the indices)
 
@@ -137,12 +137,12 @@ Examples:
 # Back to our error
 
 * Error at some program statement *N* if:
-    * the statement *N* accesses a path *P*
+    * the statement *N* accesses a place *P*
 
 ```rust
 let mut x: u32 = 22;
 let y: &u32 = &x;
-x += 1; // the statement N modifies the path `x`
+x += 1; // the statement N modifies the place `x`
 print(y);
 ```
 
@@ -151,13 +151,13 @@ print(y);
 # Back to our error
 
 * Error at some program statement *N* if:
-    * the statement *N* accesses a path *P*
-    * Accessing the path *P* would violate the terms of some loan *L*
+    * the statement *N* accesses a place *P*
+    * Accessing the place *P* would violate the terms of some loan *L*
 
 ```rust
 let mut x: u32 = 22;
 let y: &u32 = &x;
-x += 1; // the statement N modifies the path `x`
+x += 1; // the statement N modifies the place `x`
 print(y);
 ```
 
@@ -173,20 +173,20 @@ let y = &x;
 
 Loans have associated with them:
 
-* a **path** that was borrowed (here, `x`)
+* a **place** that was borrowed (here, `x`)
 * a **mode** with which it was borrowed (either *shared* or *mutable*)
 
 ---
 
 # Violating the "terms" of a loan
 
-For a **shared** loan of some path *P*
+For a **shared** loan of some place *P*
 
-* Modifying the path *P* (directly or indirectly)
+* Modifying the place *P* (directly or indirectly)
 
-For a **mutable** loan of some path *P*
+For a **mutable** loan of some place *P*
 
-* Accessing the path *P* (directly or indirectly)
+* Accessing the place *P* (directly or indirectly)
 
 ---
 
@@ -233,13 +233,13 @@ print(y);
 # Back to our error, again
 
 * Error at some program statement *N* if:
-    * the statement *N* accesses a path *P*
-    * Accessing the path *P* would violate the terms of some loan *L*
+    * the statement *N* accesses a place *P*
+    * Accessing the place *P* would violate the terms of some loan *L*
 
 ```rust
 let mut x: u32 = 22;
 let y: &u32 = &x; // loan L shares `x`
-x += 1; // the statement N modifies the path `x`, violating L
+x += 1; // the statement N modifies the place `x`, violating L
 print(y);
 ```
 
@@ -248,14 +248,14 @@ print(y);
 # Back to our error, again
 
 * Error at some program statement *N* if:
-    * the statement *N* accesses a path *P*
-    * Accessing the path *P* would violate the terms of some loan *L*
+    * the statement *N* accesses a place *P*
+    * Accessing the place *P* would violate the terms of some loan *L*
     * the loan *L* is live
 
 ```rust
 let mut x: u32 = 22;
 let y: &u32 = &x; // loan L shares `x`
-x += 1; // the statement N modifies the path `x`, violating L
+x += 1; // the statement N modifies the place `x`, violating L
 print(y);
 ```
 
@@ -356,14 +356,14 @@ print(z);
 # A borrow check error
 
 * Error at some program statement *N* if:
-    * *N* accesses a path *P*
+    * *N* accesses a place *P*
     * Accessing *P* would violate the terms of some loan *L*
     * the loan *L* is live
 
 ```rust
 let mut x: u32 = 22;
 let y: &u32 = &x; // loan L shares `x`
-x += 1; // the statement N accesses the path `x`, violating L
+x += 1; // the statement N accesses the place `x`, violating L
 print(y); // L is live because it might used here
 ```
 
@@ -481,17 +481,17 @@ template: how-do-we-decide-today
 .line2-lifetime[![Point at `&x`](content/images/Arrow.png)]
 
 * Error at some program statement *N* if:
-    * the statement *N* accesses a path *P*
-    * Accessing the path *P* would violate the terms of some loan *L*
+    * the statement *N* accesses a place *P*
+    * Accessing the place *P* would violate the terms of some loan *L*
     * the loan *L* is live
 
 
 --
 
-* Line 2 modifies the path `x`
+* Line 2 modifies the place `x`
 
 --
-* Modifying the path `x` violates the terms of `&x` loan from line 1
+* Modifying the place `x` violates the terms of `&x` loan from line 1
 
 --
 * Loan from line 1 is live on lines 2, and 3
@@ -579,17 +579,17 @@ template: how-polonius-decides
 ```
 
 * Error at some program statement *N* if:
-    * the statement *N* accesses a path *P*
-    * Accessing the path *P* would violate the terms of some loan *L*
+    * the statement *N* accesses a place *P*
+    * Accessing the place *P* would violate the terms of some loan *L*
     * the loan *L* is live
 
 
 --
 
-* Line 2 modifies the path `x`
+* Line 2 modifies the place `x`
 
 --
-* Modifying the path `x` violates the terms of the loan `L1`
+* Modifying the place `x` violates the terms of the loan `L1`
 
 --
 * `y` is live on line 2 and its type includes the loan `L1`
@@ -715,7 +715,7 @@ template: lightly-desugared
 
 .line4[![Point at `map`](content/images/Arrow.png)]
 
-* Now we can see the loan, of the path `*map`
+* Now we can see the loan, of the place `*map`
 * **Problem:** Lifetime of this loan cannot be expressed as a set of
   line numbers. It is `'a`.
 
